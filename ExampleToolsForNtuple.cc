@@ -7,8 +7,8 @@
 #include "TChain.h"
 #include "TH1.h" 
 
-#include "Analysis/Tools/interface/JetCollection.h"
-#include "Analysis/Tools/interface/Muons.h"
+#include "Analysis/Core/interface/JetCollection.h"
+#include "Analysis/Core/interface/Muons.h"
 
 using namespace std;
 using namespace analysis;

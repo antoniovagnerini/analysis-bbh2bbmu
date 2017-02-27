@@ -7,7 +7,7 @@
 #include "TChain.h"
 #include "TH1.h" 
 
-#include "Analysis/Tools/interface/Analysis.h"
+#include "Analysis/Core/interface/Analysis.h"
 
 using namespace std;
 using namespace analysis;
