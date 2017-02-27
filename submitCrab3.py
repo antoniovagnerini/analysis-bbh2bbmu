@@ -27,7 +27,7 @@ if __name__ == '__main__':
    from CRABClient.ClientExceptions import ClientException
    from httplib import HTTPException
     
-   from Analysis.Tools.crabConfig import crabConfig
+   from Analysis.Core.crabConfig import crabConfig
    config = crabConfig()
    
    if TYPE == 'MC':
