@@ -22,14 +22,14 @@ int main(int argc, char * argv[])
    
    // Input files list
    std::string inputList = "rootFileList.txt";
-   Analysis analysis(inputList,"MssmHbb/Events/EventInfo");
+   Analysis analysis(inputList,"MssmHbbTrigger/Events/EventInfo");
    
    // Physics Objects Collections
    analysis.triggerResults("MssmHbb/Events/TriggerResults");
    std::string hltPath = "HLT_DoubleJetsC100_DoubleBTagCSV_p014_DoublePFJetsC100MaxDeta1p6_v";
    
    // BTag
-//    analysis.addTree<JetTag> ("JetsTags","MssmHbbTrigger/Events/hltCombinedSecondaryVertexBJetTagsCalo");
+   analysis.addTree<JetTag> ("JetsTags","MssmHbbTrigger/Events/hltCombinedSecondaryVertexBJetTagsCalo");
    
    
    // Trigger objects
@@ -63,18 +63,18 @@ int main(int argc, char * argv[])
       // hltPath
       if ( ! analysis.triggerResult(hltPath) ) continue;
       
-//       std::shared_ptr< Collection<JetTag> > jetstags   = analysis.collection<JetTag>("JetsTags");
-//       std::vector<JetTag>  jetstagswp092;
-//       for ( int jt = 0; jt < jetstags->size() ; ++jt )
-//       {
-//          JetTag jet = jetstags->at(jt);
-//          if ( jet.pt() >= 80 )
-//          {
-//             if ( jet.btag() >= 0.92 ) jetstagswp092.push_back(jet);
-//          }
-//       }
+      std::shared_ptr< Collection<JetTag> > jetstags   = analysis.collection<JetTag>("JetsTags");
+      std::vector<JetTag>  jetstagswp092;
+      for ( int jt = 0; jt < jetstags->size() ; ++jt )
+      {
+         JetTag jet = jetstags->at(jt);
+         if ( jet.pt() >= 80 )
+         {
+            if ( jet.btag() >= 0.92 ) jetstagswp092.push_back(jet);
+         }
+      }
       
-//       if ( jetstagswp092.size() < 2 ) continue;
+      if ( jetstagswp092.size() < 2 ) continue;
       
       h_selected -> Fill(nPU);
    }
