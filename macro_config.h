@@ -9,30 +9,23 @@
 
 int macro_config(int argc, char * argv[]);
 
-std::string cfg;
+std::string cfg_;
 
-bool isMC;
-bool signalregion;
-std::string inputList;
-std::string outputRoot;
-std::string json;
-int njets;
-float btagwploose;
-float btagwpmedium;
-float btagwptight;
-std::string btagwp;
-std::string nonbtagwp;
-std::string hltPath;
-
-// int bWP = 1;
-// float btagcut[3] = {0.46,0.84,0.92};
-// // Cuts                                         // <<<<===== CMSDAS
-// float ptmin[3]   = { 100.0, 100.0, 40.0 };
-// float etamax[3]  = {   2.2,   2.2 , 2.2 };
-// float btagmin[3] = { btagcut[bWP], btagcut[bWP], btagcut[bWP]};
-// float nonbtag    = 0.46;
-// float dRmin      = 1.;
-// float detamax    = 1.55;
+int nevtmax_;
+bool isMC_;
+bool signalregion_;
+std::string inputlist_;
+std::string outputRoot_;
+std::string json_;
+int njetsmin_;
+float drmin_;
+float detamax_;
+float btagwploose_;
+float btagwpmedium_;
+float btagwptight_;
+float btagwp_;
+float nonbtagwp_;
+std::string hltPath_;
 
 int macro_config(int argc, char * argv[])
 {
@@ -42,21 +35,30 @@ int macro_config(int argc, char * argv[])
       po::options_description desc("Options");
       desc.add_options()
          ("help,h","Show help messages")
-         ("config,c",po::value<std::string>(&cfg),"Configuration file name");
+         ("config,c",po::value<std::string>(&cfg_),"Configuration file name");
       
       po::options_description config("Configuration");
       config.add_options()
-         ("ntupleslist",po::value <std::string> (&inputList)->default_value("rootFileList.txt"),"File with list of ntuples")
-         ("output",po::value <std::string> (&outputRoot)->default_value("histograms.root"),"Output root file")
-         ("json",po::value <std::string> (&json)->default_value("json.txt"),"JSON file for data")
-         ("nJets",po::value <int> (&njets)->default_value(3),"Minimum number of jets")
-         ("isMC",po::value <bool> (&isMC)->default_value(true),"Flag for MC dataset")
-         ("signalRegion",po::value <bool> (&signalregion)->default_value(true),"Flag for signal region")
-         ("hltPath",po::value <std::string> (&hltPath),"HLT path name")
+         ("ntuplesList",po::value <std::string> (&inputlist_)->default_value("rootFileList.txt"),"File with list of ntuples")
+         ("nEventsMax",po::value <int> (&nevtmax_)->default_value(-1), "Maximum number of events")
+         ("output",po::value <std::string> (&outputRoot_)->default_value("histograms.root"),"Output root file")
+         ("json",po::value <std::string> (&json_)->default_value("json.txt"),"JSON file for data")
+         ("nJetsMin",po::value <int> (&njetsmin_)->default_value(3),"Minimum number of jets")
       
-         ("btagWPLoose",po::value <float> (&btagwploose)->default_value(0.46),"BTag working point LOOSE")
-         ("btagWPMedium",po::value <float> (&btagwpmedium)->default_value(0.84),"BTag working point MEDIUM")
-         ("btagWPTight",po::value <float> (&btagwptight)->default_value(0.92),"BTag working point TIGHT");
+         ("dRMin",po::value <float> (&drmin_)->default_value(1.0),"Minimum delta R between jets")
+         ("dEtaMax",po::value <float> (&detamax_)->default_value(1.55),"Maximum delta eta between jets")
+       
+      
+         ("isMC",po::value <bool> (&isMC_)->default_value(true),"Flag for MC dataset")
+         ("signalRegion",po::value <bool> (&signalregion_)->default_value(true),"Flag for signal region")
+         ("hltPath",po::value <std::string> (&hltPath_),"HLT path name")
+      
+         ("btagWPLoose",po::value <float> (&btagwploose_)->default_value(0.46),"BTag working point LOOSE")
+         ("btagWPMedium",po::value <float> (&btagwpmedium_)->default_value(0.84),"BTag working point MEDIUM")
+         ("btagWPTight",po::value <float> (&btagwptight_)->default_value(0.92),"BTag working point TIGHT")
+         
+         ("btagWP",po::value <float> (&btagwp_)->default_value(0.8484),"Btag working point")
+         ("nonbtagWP",po::value <float> (&nonbtagwp_)->default_value(0.46),"non-Btag working point");
       
       
       
@@ -75,7 +77,7 @@ int macro_config(int argc, char * argv[])
          }
          po::notify(vm);
          
-         std::ifstream cfg_s(cfg.c_str());
+         std::ifstream cfg_s(cfg_.c_str());
          po::store(po::parse_config_file(cfg_s, config), vm); // can throw
          if ( vm.count("config") )
          {
@@ -96,7 +98,6 @@ int macro_config(int argc, char * argv[])
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl; 
       return 1; 
    } 
-
    
    return 0;
 }
