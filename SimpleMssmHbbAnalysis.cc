@@ -1,4 +1,5 @@
 #include "boost/program_options.hpp"
+#include "boost/algorithm/string.hpp"
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -22,25 +23,21 @@ int main(int argc, char * argv[])
    
    macro_config(argc, argv);
    
+   
    TH1::SetDefaultSumw2();  // proper treatment of errors when scaling histograms
    
-   int bWP = 1;
-   float btagcut[3] = {0.46,0.8484,0.9535};
    // Cuts                                         // <<<<===== CMSDAS
    float ptmin[3]   = { 100.0, 100.0, 40.0 };
    float etamax[3]  = {   2.2,   2.2 , 2.2 };
-   float btagmin[3] = { btagcut[bWP], btagcut[bWP], btagcut[bWP]};
-   float nonbtag    = 0.46;
-   float dRmin      = 1.;
-   float detamax    = 1.55;
+   float btagmin[3] = { btagwp_, btagwp_, btagwp_};
    
    // Input files list
-   Analysis analysis(inputList);
+   Analysis analysis(inputlist_);
    
    analysis.addTree<Jet> ("Jets","MssmHbb/Events/slimmedJetsPuppi");
    
    std::vector<std::string> triggerObjects;
-//   triggerObjects.push_back("hltL1DoubleJet100er2p3dEtaMax1p6");
+   triggerObjects.push_back("hltL1DoubleJet100er2p3dEtaMax1p6");
    triggerObjects.push_back("hltDoubleCaloBJets100eta2p3");
    triggerObjects.push_back("hltBTagCalo80x6CSVp0p92DoubleWithMatching");
    triggerObjects.push_back("hltDoublePFJets100Eta2p3");
@@ -51,9 +48,13 @@ int main(int argc, char * argv[])
    
    analysis.triggerResults("MssmHbb/Events/TriggerResults");
    
-   if( !isMC ) analysis.processJsonFile(json);
+   if( !isMC_ ) analysis.processJsonFile(json_);
    
-   TFile hout(outputRoot.c_str(),"recreate");
+   std::string sr_s = "SR";
+   if ( ! signalregion_ ) sr_s = "CR";
+   boost::algorithm::replace_last(outputRoot_, ".root", "_"+sr_s+".root"); 
+   
+   TFile hout(outputRoot_.c_str(),"recreate");
    
    std::map<std::string, TH1F*> h1;
    h1["n"]        = new TH1F("n" , "" , 30, 0, 30);
@@ -95,9 +96,9 @@ int main(int argc, char * argv[])
    // 6: btag (bbnb)
    int nsel[10] = { };
    int nmatch[10] = { };
-   
-   std::string prevFile = "";
-   for ( int i = 0 ; i < analysis.size() ; ++i )
+
+   if ( nevtmax_ < 0 ) nevtmax_ = analysis.size();
+   for ( int i = 0 ; i < nevtmax_ ; ++i )
    {
       int njets = 0;
       int njets_csv = 0;
@@ -106,12 +107,12 @@ int main(int argc, char * argv[])
       if ( i > 0 && i%100000==0 ) std::cout << i << "  events processed! " << std::endl;
       
       analysis.event(i);
-      if (! isMC )
+      if (! isMC_ )
       {
          if (!analysis.selectJson() ) continue; // To use only goodJSonFiles
       }
       
-      int triggerFired = analysis.triggerResult(hltPath);
+      int triggerFired = analysis.triggerResult(hltPath_);
       if ( !triggerFired ) continue;
       
       ++nsel[0];
@@ -151,7 +152,7 @@ int main(int argc, char * argv[])
          for ( int j2 = j1+1; j2 < 3; ++j2 )
          {
             const Jet & jet2 = *selectedJets[j2];
-            if ( jet1.deltaR(jet2) < dRmin ) goodEvent = false;
+            if ( jet1.deltaR(jet2) < drmin_ ) goodEvent = false;
          }
       }
       
@@ -159,7 +160,7 @@ int main(int argc, char * argv[])
       
       ++nsel[3];
       
-      if ( fabs(selectedJets[0]->eta() - selectedJets[1]->eta()) > detamax ) continue;
+      if ( fabs(selectedJets[0]->eta() - selectedJets[1]->eta()) > detamax_ ) continue;
       
       ++nsel[4];
       
@@ -182,9 +183,9 @@ int main(int argc, char * argv[])
          h1[Form("btag_%i",j)] -> Fill(jet->btag());
          
          if ( j < 2 && jet->btag() < btagmin[j] )     goodEvent = false;
-         if ( ! signalregion )
+         if ( ! signalregion_ )
          {
-            if ( j == 2 && jet->btag() > nonbtag )    goodEvent = false; 
+            if ( j == 2 && jet->btag() > nonbtagwp_ )    goodEvent = false; 
          }
          else
          {
@@ -240,7 +241,7 @@ int main(int argc, char * argv[])
          h1[Form("btag_%i_csv",j)] -> Fill(jet->btag());
       }
       mbb = (selectedJets[0]->p4() + selectedJets[1]->p4()).M();
-      if ( !signalregion )
+      if ( !signalregion_ )
       { 
          h1["m12_csv"] -> Fill(mbb);
          weight = 1;
@@ -277,7 +278,7 @@ int main(int argc, char * argv[])
    cuts[3] = "Delta R(i;j)";
    cuts[4] = "Delta eta(j1;j2)";
    cuts[5] = "btagged (bbnb)";
-   if ( signalregion ) cuts[5] = "btagged (bbb)";
+   if ( signalregion_ ) cuts[5] = "btagged (bbb)";
    cuts[6] = "Matched to online j1;j2";
    
    printf ("%-23s  %10s  %10s  %10s \n", std::string("Cut flow").c_str(), std::string("# events").c_str(), std::string("absolute").c_str(), std::string("relative").c_str() ); 
