@@ -21,14 +21,11 @@ using namespace analysis::tools;
 int main(int argc, char * argv[])
 {
    
-   macro_config(argc, argv);
-   
+   if ( macro_config(argc, argv) != 0 ) return -1;
    
    TH1::SetDefaultSumw2();  // proper treatment of errors when scaling histograms
    
-   // Cuts                                         // <<<<===== CMSDAS
-   float ptmin[3]   = { 100.0, 100.0, 40.0 };
-   float etamax[3]  = {   2.2,   2.2 , 2.2 };
+   // Cuts
    float btagmin[3] = { btagwp_, btagwp_, btagwp_};
    
    // Input files list
@@ -36,15 +33,10 @@ int main(int argc, char * argv[])
    
    analysis.addTree<Jet> ("Jets","MssmHbb/Events/slimmedJetsPuppi");
    
-   std::vector<std::string> triggerObjects;
-   triggerObjects.push_back("hltL1DoubleJet100er2p3dEtaMax1p6");
-   triggerObjects.push_back("hltDoubleCaloBJets100eta2p3");
-   triggerObjects.push_back("hltBTagCalo80x6CSVp0p92DoubleWithMatching");
-   triggerObjects.push_back("hltDoublePFJets100Eta2p3");
-//   triggerObjects.push_back("hltDoublePFJets100Eta2p3MaxDeta1p6");
-
-   for ( auto & obj : triggerObjects )
+   for ( auto & obj : triggerObjects_ )
+   {
       analysis.addTree<TriggerObject> (obj,Form("MssmHbb/Events/slimmedPatTrigger/%s",obj.c_str()));
+   }
    
    analysis.triggerResults("MssmHbb/Events/TriggerResults");
    
@@ -61,7 +53,7 @@ int main(int argc, char * argv[])
    h1["n_csv"]    = new TH1F("n_csv" , "" , 30, 0, 30);
    h1["n_ptmin20"]= new TH1F("n_ptmin20" , "" , 30, 0, 30);
    h1["n_ptmin20_csv"] = new TH1F("n_ptmin20_csv" , "" , 30, 0, 30);
-   for ( int i = 0 ; i < 3 ; ++i )
+   for ( int i = 0 ; i < njetsmin_ ; ++i )
    {
       h1[Form("pt_%i",i)]         = new TH1F(Form("pt_%i",i) , "" , 100, 0, 1000);
       h1[Form("eta_%i",i)]        = new TH1F(Form("eta_%i",i) , "" , 100, -5, 5);
@@ -118,7 +110,7 @@ int main(int argc, char * argv[])
       ++nsel[0];
       
       // match offline to online
-      analysis.match<Jet,TriggerObject>("Jets",triggerObjects,0.5);
+      analysis.match<Jet,TriggerObject>("Jets",triggerObjects_,0.5);
       
       // Jets - std::shared_ptr< Collection<Jet> >
       auto slimmedJets = analysis.collection<Jet>("Jets");
@@ -127,15 +119,15 @@ int main(int argc, char * argv[])
       {
          if ( slimmedJets->at(j).idLoose() ) selectedJets.push_back(&slimmedJets->at(j));
       }
-      if ( selectedJets.size() < 3 ) continue;
+      if ( (int)selectedJets.size() < njetsmin_ ) continue;
       
       ++nsel[1];
       
       // Kinematic selection - 3 leading jets
-      for ( int j = 0; j < 3; ++j )
+      for ( int j = 0; j < njetsmin_; ++j )
       {
          Jet * jet = selectedJets[j];
-         if ( jet->pt() < ptmin[j] || fabs(jet->eta()) > etamax[j] )
+         if ( jet->pt() < jetsptmin_[j] || fabs(jet->eta()) > jetsetamax_[j] )
          {
             goodEvent = false;
             break;
@@ -146,10 +138,10 @@ int main(int argc, char * argv[])
       
       ++nsel[2];
       
-      for ( int j1 = 0; j1 < 2; ++j1 )
+      for ( int j1 = 0; j1 < njetsmin_-1; ++j1 )
       {
          const Jet & jet1 = *selectedJets[j1];
-         for ( int j2 = j1+1; j2 < 3; ++j2 )
+         for ( int j2 = j1+1; j2 < njetsmin_; ++j2 )
          {
             const Jet & jet2 = *selectedJets[j2];
             if ( jet1.deltaR(jet2) < drmin_ ) goodEvent = false;
@@ -174,7 +166,7 @@ int main(int argc, char * argv[])
       
       h1["n"] -> Fill(selectedJets.size());
       h1["n_ptmin20"] -> Fill(njets);
-      for ( int j = 0; j < 3; ++j )
+      for ( int j = 0; j < njetsmin_; ++j )
       {
          Jet * jet = selectedJets[j];
          h1[Form("pt_%i",j)]   -> Fill(jet->pt());
@@ -207,14 +199,14 @@ int main(int argc, char * argv[])
       for ( int j = 0; j < 2; ++j )
       {
          Jet * jet = selectedJets[j];
-//         for ( auto & obj : triggerObjects )   matched = (matched && jet->matched(obj));
-         for ( size_t io = 0; io < triggerObjects.size() ; ++io )
+//         for ( auto & obj : triggerObjects_ )   matched = (matched && jet->matched(obj));
+         for ( size_t io = 0; io < triggerObjects_.size() ; ++io )
          {       
-            if ( ! jet->matched(triggerObjects[io]) ) matched[io] = false;
+            if ( ! jet->matched(triggerObjects_[io]) ) matched[io] = false;
          }
       }
       
-      for ( size_t io = 0; io < triggerObjects.size() ; ++io )
+      for ( size_t io = 0; io < triggerObjects_.size() ; ++io )
       {
          if ( matched[io] ) ++nmatch[io];
          goodEvent = ( goodEvent && matched[io] );
@@ -232,7 +224,7 @@ int main(int argc, char * argv[])
       }
       h1["n_csv"] -> Fill(selectedJets.size());
       h1["n_ptmin20_csv"] -> Fill(njets_csv);
-      for ( int j = 0; j < 3; ++j )
+      for ( int j = 0; j < njetsmin_; ++j )
       {
          Jet * jet = selectedJets[j];
          h1[Form("pt_%i_csv",j)]   -> Fill(jet->pt());
@@ -299,9 +291,9 @@ int main(int argc, char * argv[])
    // Trigger objects counts   
    std::cout << std::endl;
    printf ("%-40s  %10s \n", std::string("Trigger object").c_str(), std::string("# events").c_str() ); 
-//   for ( size_t io = 0; io < triggerObjects.size() ; ++io )
+//   for ( size_t io = 0; io < triggerObjects_.size() ; ++io )
 //   {
-//      printf ("%-40s  %10d \n", triggerObjects[io].c_str(), nmatch[io] ); 
+//      printf ("%-40s  %10d \n", triggerObjects_[io].c_str(), nmatch[io] ); 
 //   }
    
    
