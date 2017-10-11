@@ -15,7 +15,7 @@
 
 using namespace std;
 using namespace analysis;
-using namespace analysis::tools;
+using namespace analysis::core;
 
 // =============================================================================================   
 int main(int argc, char * argv[])

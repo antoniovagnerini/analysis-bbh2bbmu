@@ -12,7 +12,7 @@
 
 using namespace std;
 using namespace analysis;
-using namespace analysis::tools;
+using namespace analysis::core;
 
 
 void PrintCrossSections(TChain *);
