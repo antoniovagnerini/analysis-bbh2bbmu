@@ -11,7 +11,7 @@
 #include "TH1.h" 
 
 #include "Analysis/Core/interface/Analysis.h"
-#include "Analysis/Sandbox/bin/macro_config.h"
+#include "Analysis/Core/bin/macro_config.h"
 
 using namespace std;
 using namespace analysis;
