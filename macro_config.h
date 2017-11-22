@@ -37,6 +37,7 @@ float drmax_;
 float detamax_;
 float dphimin_;
 
+std::string btagalgo_;
 float btagwploose_;
 float btagwpmedium_;
 float btagwptight_;
@@ -57,7 +58,7 @@ int macro_config(int argc, char * argv[])
       po::options_description desc("Options");
       desc.add_options()
          ("help,h","Show help messages")
-         ("config,c",po::value<std::string>(&cfg_),"Configuration file name");
+         ("config,c",po::value<std::string>(&cfg_)->required(),"Configuration file name");
       
       po::options_description config("Configuration");
       config.add_options()
@@ -92,6 +93,7 @@ int macro_config(int argc, char * argv[])
          ("triggerObjectsJets", po::value<std::vector<std::string> >(&triggerObjectsJets_)->multitoken(),"Trigger objects for jets")
          ("triggerObjectsMuons", po::value<std::vector<std::string> >(&triggerObjectsMuons_)->multitoken(),"Trigger objects for muons")
 //      
+	 ("btagAlgo",po::value <std::string> (&btagalgo_)->default_value("csv"),"BTag Algorithm")
          ("btagWPLoose",po::value <float> (&btagwploose_)->default_value(0.46),"BTag working point LOOSE")
          ("btagWPMedium",po::value <float> (&btagwpmedium_)->default_value(0.84),"BTag working point MEDIUM")
          ("btagWPTight",po::value <float> (&btagwptight_)->default_value(0.92),"BTag working point TIGHT")
@@ -159,7 +161,7 @@ int macro_config(int argc, char * argv[])
             std::cout << "Config Error *** Muon maximum |eta| were not defined or the definition does not match the minimum number of muons" <<std::endl;
             return -1;
          }
-         
+        
          
       }
       catch(po::error& e)
