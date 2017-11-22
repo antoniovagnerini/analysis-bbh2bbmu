@@ -1,18 +1,19 @@
 #!/bin/csh -f
 
-if ( $#argv < 3 ) then
-   echo Need to give sample name, the macro name and the number of splits
+if ( $#argv < 4 ) then
+   echo Need to give sample name, the macro name, the config name and the number of splits
    exit
 endif
 
-set rootfilelist = $1
-set macro = $2
-set nsplit = $3
-
+set macro = $1
+set config = $2
+set rootfilelist = $3
+set nsplit = $4
 
 ./split.csh $nsplit $rootfilelist
 
 set files = `/bin/ls *_x???.txt`
+
 
 foreach file ( $files )
 
@@ -25,10 +26,11 @@ foreach file ( $files )
    mkdir -p $exedir
    cd $exedir
    mv ../$file ./rootFileList.txt
-   if ( -e ../json.txt ) then
-      cp -p ../json.txt .
+   if ( -e ../json_2017.txt ) then
+      cp -p ../json_2017.txt .
    endif
-   ../qsub.sh $macro
+   cp ../$config . 
+   ../qsub.sh $macro $config
    sleep 5
    cd -
 end
