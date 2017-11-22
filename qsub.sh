@@ -1,5 +1,7 @@
 #!/bin/sh 
 # $1 - code name
+# $2 - config file
+
 cat > $1.zsh <<EOF
 #!/bin/zsh
 #
@@ -27,7 +29,7 @@ cat > $1.zsh <<EOF
 #$ -o $1.out
 #
 #$ -e $1.err
-$1
+$1 -c $2
 
 EOF
 
