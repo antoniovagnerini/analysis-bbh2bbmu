@@ -93,7 +93,7 @@ int macro_config(int argc, char * argv[])
          ("triggerObjectsJets", po::value<std::vector<std::string> >(&triggerObjectsJets_)->multitoken(),"Trigger objects for jets")
          ("triggerObjectsMuons", po::value<std::vector<std::string> >(&triggerObjectsMuons_)->multitoken(),"Trigger objects for muons")
 //      
-	 ("btagAlgo",po::value <std::string> (&btagalgo_)->default_value("csv"),"BTag Algorithm")
+	 ("btagAlgorithm",po::value <std::string> (&btagalgo_)->default_value("csv"),"BTag Algorithm")
          ("btagWPLoose",po::value <float> (&btagwploose_)->default_value(0.46),"BTag working point LOOSE")
          ("btagWPMedium",po::value <float> (&btagwpmedium_)->default_value(0.84),"BTag working point MEDIUM")
          ("btagWPTight",po::value <float> (&btagwptight_)->default_value(0.92),"BTag working point TIGHT")
