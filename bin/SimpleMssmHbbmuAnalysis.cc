@@ -4,18 +4,20 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <ctime>
 
 #include "TFile.h" 
 #include "TFileCollection.h"
 #include "TChain.h"
 #include "TH1.h" 
+#include "TRandom3.h"
 
-#include "Analysis/Core/interface/Analysis.h"
-#include "Analysis/Core/bin/macro_config.h"
+#include "Analysis/Tools/interface/Analysis.h"
+#include "Analysis/Tools/bin/macro_config.h"
 
 using namespace std;
 using namespace analysis;
-using namespace analysis::core;
+using namespace analysis::tools;
 
 // =============================================================================================   
 int main(int argc, char * argv[])
@@ -29,11 +31,14 @@ int main(int argc, char * argv[])
    // Cuts
    std::string btagalgo = btagalgo_;
    float btagmin[3] = { btagwp_, btagwp_, btagwp_};
-   
+
    // Input files list
    Analysis analysis(inputlist_);
-   
-   analysis.addTree<Jet> ("Jets","MssmHbb/Events/slimmedJetsPuppi");
+   std::vector<std::pair<int,int>> eraRanges = {{299337,302029},{302030,303434},{303435,304826},{304911,306462}}; //C,D,E,F
+
+   int nwindows = std::floor(prescaleEra_[3]); // number of distributions  
+
+   analysis.addTree<Jet>("Jets", Form("MssmHbb/Events/%s",jetsCol_.c_str()) );
    analysis.addTree<Muon>("Muons","MssmHbb/Events/slimmedMuons");
         
    for ( auto & obj : triggerObjectsJets_ )
@@ -47,10 +52,13 @@ int main(int argc, char * argv[])
    // analysis.addTree<TriggerObject>( l1jetob.c_str(),std::string(path + l1jetob).c_str());
     
    analysis.triggerResults("MssmHbb/Events/TriggerResults");
-
+   
+   //   FilterResults evtFilter = analysis.eventFilter("MssmHbb/Metadata/EventFilter"); 
    
    if( !isMC_ ) analysis.processJsonFile(json_);
    
+   float prescaleEra = 11.0;
+
    std::string sr_s = "SR";
    if ( ! signalregion_ ) sr_s = "CR";
    boost::algorithm::replace_last(outputRoot_, ".root", "_"+sr_s+".root"); 
@@ -68,18 +76,18 @@ int main(int argc, char * argv[])
    h1["n_ptmin20"]    = new TH1F("n_ptmin20" , "" , 30, 0, 30);                                                 // # jet pT>20    
    h1["n_ptmin20_btagsel"] = new TH1F("n_ptmin20_btagsel" , "" , 30, 0, 30);                                    //             after btag sel 
    h1["n_ptmin20_mujsel"]  = new TH1F("n_ptmin20_mujsel"  , "" , 30, 0, 30);                                    //             after mujsel
-   h2["n_ptmin20_phivseta"]         = new TH2F("n_ptmin20_phivseta","", 25, -2.5, 2.5, 20, -4.0, 4.0 );         // # jet pT>20 in bins of eta and phi 
-   h2["n_ptmin20_btagsel_phivseta"] = new TH2F("n_ptmin20_btagsel_phivseta","", 25, -2.5, 2.5, 20, -4.0, 4.0 ); //                   & after btag sel
+   h2["n_ptmin20_phivseta"]         = new TH2F("n_ptmin20_phivseta","", 25, -2.5, 2.5, 21, -3.15, 3.15 );         // # jet pT>20 in bins of eta and phi 
+   h2["n_ptmin20_btagsel_phivseta"] = new TH2F("n_ptmin20_btagsel_phivseta","", 25, -2.5, 2.5, 21, -3.15, 3.15 ); //                   & after btag sel
 
    // Muons -----------------------------------------------------------------------------------
 
    h1["n_muons"]           = new TH1F("n_muons"  , "" , 30, 0, 30);                           // # muons passing ID
-   h2["n_muons_phivseta"]  = new TH2F("n_muons_phivseta","", 25, -2.5, 2.5, 20, -4.0, 4.0 );  //         passing kinematic
+   h2["n_muons_phivseta"]  = new TH2F("n_muons_phivseta","", 25, -2.5, 2.5, 21, -3.15, 3.15 );  //         passing kinematic
 
    //after dR selection
    h1["pt_mu"]         = new TH1F("pt_mu"    , "" , 100, 0, 300);  
    h1["eta_mu"]        = new TH1F("eta_mu   ", "" , 100, -5, 5);  
-   h2["eta_phi_mu"]    = new TH2F("eta_phi_mu","", 25, -2.5, 2.5, 20, -4.0, 4.0 ); 
+   h2["eta_phi_mu"]    = new TH2F("eta_phi_mu","", 25, -2.5, 2.5, 21, -3.15, 3.15 ); 
    h1["dR_muj"]        = new TH1F("dR_muj" , "" , 100, 0, 0.5);   
    h1["dR_muj0"]       = new TH1F("dR_muj0", "" , 100, 0, 0.5);
    h1["dR_muj1"]       = new TH1F("dR_muj1", "" , 100, 0, 0.5);
@@ -105,7 +113,7 @@ int main(int argc, char * argv[])
       h1[Form("phi_%i",i)]        = new TH1F(Form("phi_%i",i) , "" , 100, -4, 4);
       h1[Form("csv_%i",i)]        = new TH1F(Form("csv_%i",i) , "" , 200, 0, 1);
       h1[Form("deepcsv_%i",i)]    = new TH1F(Form("deepcsv_%i",i) , "" , 200, 0, 1);
-      h2[Form("eta_phi_%i",i)]       = new TH2F(Form("eta_phi_%i",i) , "" , 25, -2.5, 2.5, 20, -4.0, 4.0 );
+      h2[Form("eta_phi_%i",i)]       = new TH2F(Form("eta_phi_%i",i) , "" , 25, -2.5, 2.5, 21, -3.15, 3.15 );
       
       // after btagsel sel 
       h1[Form("pt_%i_btagsel",i)]     = new TH1F(Form("pt_%i_btagsel",i) , "" , 100, 0, 1000);
@@ -113,7 +121,7 @@ int main(int argc, char * argv[])
       h1[Form("phi_%i_btagsel",i)]    = new TH1F(Form("phi_%i_btagsel",i) , "" , 100, -4, 4);
       h1[Form("csv_%i_btagsel",i)]    = new TH1F(Form("csv_%i_btagsel",i) , "" , 200, 0, 1);  
       h1[Form("deepcsv_%i_btagsel",i)]= new TH1F(Form("deepcsv_%i_btagsel",i) , "" , 200, 0, 1);
-      h2[Form("eta_phi_%i_btagsel",i)] = new TH2F(Form("eta_phi_%i_btagsel",i) , "" , 25, -2.5, 2.5, 20, -4.0, 4.0 );
+      h2[Form("eta_phi_%i_btagsel",i)] = new TH2F(Form("eta_phi_%i_btagsel",i) , "" , 25, -2.5, 2.5, 21, -3.15, 3.15 );
       
       // after mujet sel
       h1[Form("pt_%i_mujsel",i)]     = new TH1F(Form("pt_%i_mujsel",i) , "" , 100, 0, 1000);
@@ -126,18 +134,21 @@ int main(int argc, char * argv[])
 
    // Dijet masss -----------------------------------------------------------------------------------
 
-   h1["m12"]     = new TH1F("m12"     , "" , 50, 0, 1000);
-   h1["m12_btagsel"] = new TH1F("m12_btagsel" , "" , 50, 0, 1000);
-   h1["m12_mujsel"] = new TH1F("m12_mujsel" , "" , 50, 0, 1000);
-   h1["m12_mujsel_loweta"] = new TH1F("m12_mujsel_loweta" , "" , 50, 0, 1000);
-   h1["m12_mujsel_mediumeta"] = new TH1F("m12_mujsel_mediumeta" , "" , 50, 0, 1000);
-   h1["m12_mujsel_higheta"] = new TH1F("m12_mujsel_higheta" , "" , 50, 0, 1000);
-   h1["m12_mujsel_mixedeta"] = new TH1F("m12_mujsel_mixedeta" , "" , 50, 0, 1000);
+   h1["m12"]     = new TH1F("m12"     , "" , 125, 0, 2500);
+   h1["m12_btagsel"] = new TH1F("m12_btagsel" , "" , 125, 0, 2500);
+   h1["m12_mujsel"] = new TH1F("m12_mujsel" , "" , 125, 0, 2500);
+   h1["m12_mujsel_loweta"] = new TH1F("m12_mujsel_loweta" , "" , 125, 0, 2500);
+   h1["m12_mujsel_mediumeta"] = new TH1F("m12_mujsel_mediumeta" , "" , 125, 0, 2500);
+   h1["m12_mujsel_higheta"] = new TH1F("m12_mujsel_higheta" , "" , 125, 0, 2500);
+   h1["m12_mujsel_mixedeta"] = new TH1F("m12_mujsel_mixedeta" , "" , 125, 0, 2500);
 
    double mbb;
    double weight;
+   double mbbw[nwindows];
    TTree *tree = new TTree("MssmHbb_13TeV","");
    tree->Branch("mbb",&mbb,"mbb/D");
+   tree->Branch("nwindows",&nwindows,"nwindows/I");
+   tree->Branch("mbbw",mbbw,"mbbw[nwindows]/D");
    tree->Branch("weight",&weight,"weight/D");
    
    // Analysis of events
@@ -156,7 +167,16 @@ int main(int argc, char * argv[])
    int nmatch_jet[10] = { };
    int nmatch_mu[10] = { };
    int nmatch_mujet = 0;   
+
+   int ntrig = 1;
+   int npres = 1;
+
+   //  std::vector<double> randomV;
+   // randomV.myvector.push_back();
+  
+   TRandom3 *R = new TRandom3( 243193272 );
    
+
    if ( nevtmax_ < 0 ) nevtmax_ = analysis.size();
    for ( int i = 0 ; i < nevtmax_ ; ++i )
    { 
@@ -166,21 +186,55 @@ int main(int argc, char * argv[])
       int nmuons =0;
       bool goodEvent = true;
       bool muonJetEvent = false;   
-       
+
+      int window = 0;
+    
+      // randomV.myvector.push_back();
+ 
       if ( i > 0 && i%100000==0 ) std::cout << i << "  events processed! " << std::endl;
      
       // if (analysis.run() > 304209 ) continue;
       analysis.event(i);
-                  if (! isMC_ )
+      if (! isMC_ )
       {
          if (!analysis.selectJson() ) continue; // To use only goodJSonFiles
       }
-	    
+      
+
       // #0 TRIGGERED EVTs     ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      
+      if ( ! (isMC_ && signalregion_) ) // for data fire trigger first
+     {
       int triggerFired = analysis.triggerResult(hltPath_);
       if ( !triggerFired ) continue;
+      ++ntrig;
+     }
+      
+      //Prescale
+      if ( ! isMC_ && ! signalregion_ )
+	{
+	  for ( size_t i = 0 ; i < eraRanges.size() ; i++ )
+	    if (analysis.run() >= eraRanges[i].first && analysis.run() <= eraRanges[i].second ) prescaleEra = prescaleEra_[i];
+
+	  double random = R->Rndm();
+
+	  for ( int w=0 ; w < nwindows; w++ )
+	    {
+	      
+	      if ( w == nwindows -1 && random > (w+1)/prescaleEra ) continue; 
+	      if ( w/prescaleEra < random  &&  random < (w+1)/prescaleEra ) 
+		{		  
+		  window = w;
+		  break;
+		}
+	     
+	    }
+	  
+	  ++npres;
+	}
       
       ++nsel[0];
+
       // =============== JET SELECTION =======================================================================
       // #1 ID LOOSE JET  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++      
       // match offline to online
@@ -266,16 +320,21 @@ int main(int argc, char * argv[])
       	 if      ( btagalgo == "csv" )      btagj = jet->btag();
          else if ( btagalgo == "deepcsv" )  btagj = jet->btag("btag_deepb")+jet->btag("btag_deepbb");
       	 else return -1;
-     
-         if ( j < 2 && btagj < btagmin[j] )     goodEvent = false;
-         if ( ! signalregion_ )
-         {
-            if ( j == 2 && btagj > nonbtagwp_ ) goodEvent = false; 
-         }
-         else
-         {
-            if ( j == 2 && btagj < btagmin[j] ) goodEvent = false; 
-         }   
+         // if ( j == 2 && i%50000  ) std::cout << "event # " << i << " btagj(3) = " << btagj <<  std::endl;   
+	 // if ( j == 2 && btagj < btagmin[j] && i%50000  ) std::cout << "SKIP in bbb" <<  std::endl;  
+
+	 if ( j < 2 && btagj < btagmin[j] )     goodEvent = false;
+
+	 if ( ! signalregion_ )
+	   {
+	     if ( j == 2 && btagj > nonbtagwp_ ) goodEvent = false; 
+	   }
+	 else
+	   {
+	     if ( j == 2 && btagj < btagmin[j] ) goodEvent = false; 
+	   }   
+		
+	 
       }
 
       h1["m12"] -> Fill((selectedJets[0]->p4() + selectedJets[1]->p4()).M());
@@ -304,12 +363,12 @@ int main(int argc, char * argv[])
 	 h2[Form("eta_phi_%i_btagsel",j)] -> Fill(jet->eta(),jet->phi());
 
       }
-      mbb = (selectedJets[0]->p4() + selectedJets[1]->p4()).M();
-      if ( !signalregion_ )
+      mbbw[window] = (selectedJets[0]->p4() + selectedJets[1]->p4()).M();
+      if ( !signalregion_ || isMC_ )
       { 
-         h1["m12_btagsel"] -> Fill(mbb);
-	 //    weight = 1;
-         //tree -> Fill();
+         h1["m12_btagsel"] -> Fill(mbbw[window]);
+         // weight = 1;
+        // tree -> Fill();
       }
            
       ++nsel[5];
@@ -318,14 +377,15 @@ int main(int argc, char * argv[])
       
       //Muon ID sel +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       std::vector<Muon *> selectedMuons;
+      const char muID = muonsid_.at(0) ;
       for ( int m = 0 ; m < slimmedMuons->size() ; ++m )
       {	 
 
 	//       if ( i > 0 && i%100==0 ) std::cout << i << "\t" << "slimmed" << "\t" <<slimmedMuons->at(m).pt() << std::endl;
-       if ( slimmedMuons->at(m).isLooseMuon() )
+	if ( (muID =='L' && slimmedMuons->at(m).isLooseMuon()) || (muID =='M' && slimmedMuons->at(m).isMediumMuon())  )
 	 { 
-	 selectedMuons.push_back(&slimmedMuons->at(m));	    
-	 ++nmuons;
+	   selectedMuons.push_back(&slimmedMuons->at(m));	    
+	   ++nmuons;
 	 }
       }
       if ( (int)selectedMuons.size() < 1 ) continue;
@@ -373,6 +433,14 @@ int main(int argc, char * argv[])
         //     if ( l1obj.type() == -99 ) analysis.match<Jet,TriggerObject>("Jets",l1jetob,0.5);    //l1jet seed is -99
 	//   }
 
+      if ( isMC_ && signalregion_ ) // for MC apply trigger selection at the end                                                                                                       
+	{
+	  int triggerFired = analysis.triggerResult(hltPath_);
+	  if ( !triggerFired ) continue;
+	  ++nsel[7];
+	}
+
+      
       analysis.match<Jet,TriggerObject>("Jets",triggerObjectsJets_,0.5);
       analysis.match<Muon,TriggerObject>("Muons",triggerObjectsMuons_,0.5);
       
@@ -392,11 +460,14 @@ int main(int argc, char * argv[])
          for ( size_t io = 0; io < triggerObjectsJets_.size()-1 ; ++io ) //exclude hltBSoftMuonDiJet40Mu12L3FilterByDR
          {  
 	    if ( ! jet->matched(triggerObjectsJets_[io]) ) matched_jet[io] = false;
+	    //if ( io ==2 && i%50000  ) std::cout << "event # " << i << " j(" <<  j << ") matched " << matched_jet[io] <<  std::endl;
          }
+
 	 //DR jet-mu
 	 if (jet->matched("hltBSoftMuonDiJet40Mu12L3FilterByDR")) matched_mujet[j] = true; 
       }
 
+     
       //MUON loop -- MATCH if any of the muon matches  
       bool matched_mu[10] = {false,false,false,false,false,false,false,false,false,false};  //ntriggerobjects=10
       for ( size_t m = 0; m < selectedMuonsinJet.size(); ++m )
@@ -439,7 +510,8 @@ int main(int argc, char * argv[])
 
 
       //NEED TO ADD DOUBLE-MUJET CASE FOR EFFICIENCY CALC.
-      ++nsel[7]; 
+      if ( ! (isMC_ && signalregion_) ) ++nsel[7]; 
+      else ++nsel[8];
 
       
      //=============================================================================================== 
@@ -447,8 +519,21 @@ int main(int argc, char * argv[])
        for ( int j = 0 ; j < (int)selectedJets.size() ; ++j )
        {
           if ( selectedJets[j]->pt() < 20. ) continue;
-          ++njets_mujsel;
+          ++njets_mujsel;                             
+	  /*
+	  float btagj = selectedJets[j]->btag("btag_deepb")+selectedJets[j]->btag("btag_deepbb");
+	           if ( ! signalregion_ )                                                                                                                                                                
+	           {                                                                                                                                                                                     
+	              if ( j == 2 && btagj > nonbtagwp_ ) goodEvent = false;                                                                                                                             
+	           }                                                                                                                                                                                     
+	           else                                                                                                                                                                                  
+	           {                                                                                                                                                                                     
+	              if ( j == 2 && btagj < btagmin[j] ) goodEvent = false;                                                                                                                             
+	           }     */
+
        }
+
+       /* if ( ! goodEvent ) continue; */ 
 
       h1["n_mujets"]  -> Fill(nmujets);                   // number real mujets per evt
       h1["n_muinjet"] -> Fill(selectedMuonsinJet.size()); // number of muons in dR cone
@@ -464,21 +549,36 @@ int main(int argc, char * argv[])
          h1[Form("csv_%i_mujsel",j)] -> Fill(jet->btag());
 	 h1[Form("deepcsv_%i_mujsel",j)] -> Fill(jet->btag("btag_deepb")+jet->btag("btag_deepbb"));
       }
-      mbb = (selectedJets[0]->p4() + selectedJets[1]->p4()).M();
-      if ( !signalregion_ )
+
+      //      mbbw = (selectedJets[0]->p4() + selectedJets[1]->p4()).M();
+
+      mbbw[window] = (selectedJets[0]->p4() + selectedJets[1]->p4()).M(); 
+ 
+      
+      for ( int i=0; i< nwindows; i++)
+	{
+	  if (i != window) mbbw[i] = -1; //need to fill all entrie in a Tree
+	  //  cout << i << " " << mbbw[i] << endl;
+	}
+      
+      if ( !signalregion_ || isMC_ )
       { 
-         h1["m12_mujsel"] -> Fill(mbb);
+         h1["m12_mujsel"] -> Fill(mbbw[window]);
          weight = 1;
+	 mbb = mbbw[0];
          tree -> Fill();
       }
       // both jets in low, medium or high eta region
       float eta_j0 = fabs(selectedJets[0]->eta());
       float eta_j1 = fabs(selectedJets[1]->eta());
+      if ( !signalregion_ || isMC_ )
+	{
 
-      if      ( eta_j0 < 0.9  && eta_j1 < 0.9 )                                      h1["m12_mujsel_loweta"]   -> Fill(mbb);
-      else if ( eta_j0 > 0.9  && eta_j0 < 1.5 && eta_j1 > 0.9 && eta_j1 < 1.5 )      h1["m12_mujsel_mediumeta"]-> Fill(mbb);
-      else if ( eta_j0 > 1.5  && eta_j1 > 1.5 )                                      h1["m12_mujsel_higheta"]  -> Fill(mbb);
-      else                                                                           h1["m12_mujsel_mixedeta"] -> Fill(mbb);
+	  if      ( eta_j0 < 0.9  && eta_j1 < 0.9 )                                      h1["m12_mujsel_loweta"]   -> Fill(mbbw[window]);
+	  else if ( eta_j0 > 0.9  && eta_j0 < 1.5 && eta_j1 > 0.9 && eta_j1 < 1.5 )      h1["m12_mujsel_mediumeta"]-> Fill(mbbw[window]);
+	  else if ( eta_j0 > 1.5  && eta_j1 > 1.5 )                                      h1["m12_mujsel_higheta"]  -> Fill(mbbw[window]);
+	  else                                                                           h1["m12_mujsel_mixedeta"] -> Fill(mbbw[window]);
+	}
 
       for (  size_t m = 0; m < selectedMuonsinJet.size(); ++m )      
        {
@@ -516,7 +616,9 @@ int main(int argc, char * argv[])
    double fracAbs[10];
    double fracRel[10];
    std::string cuts[10];
-   cuts[0] = "Triggered";
+   cuts[0] = "Triggered with PS " + std::to_string(prescaleEra);
+   if ( signalregion_ ) cuts[0] = "Triggered";
+   if ( isMC_ && signalregion_ ) cuts[0] = "No Trigger";
    cuts[1] = "Triple idloose-jet";
    cuts[2] = "Triple jet kinematics";
    cuts[3] = "Delta R(i;j)";
@@ -524,10 +626,15 @@ int main(int argc, char * argv[])
    cuts[5] = "btagged (bbnb)";
    if ( signalregion_ ) cuts[5] = "btagged (bbb)";
    cuts[6] = "Muon jet sel";
-   cuts[7] = "Match online tobj ";
+   cuts[7] = "Matched to online tobj ";
+   if (isMC_ && signalregion_ )  
+     {
+       cuts[7] = "Triggered ";
+       cuts[8] = "Matched to online tobj ";
+     }
 
    printf ("%-23s  %10s  %10s  %10s \n", std::string("Cut flow").c_str(), std::string("# events").c_str(), std::string("absolute").c_str(), std::string("relative").c_str() ); 
-   for ( int i = 0; i < 8; ++i )
+   for ( int i = 0; i < 9; ++i ) // 9
    {
       fracAbs[i] = double(nsel[i])/nsel[0];
       if ( i>0 )
@@ -554,6 +661,9 @@ int main(int argc, char * argv[])
   {
      printf ("%-40s  %10d \n", triggerObjectsMuons_[io].c_str(),  nmatch_mu[io] ); 
   }     
+
+
+  //std::cout<< (float)ntrig/npres << std::endl;
    
    
    
