@@ -364,9 +364,10 @@ int main(int argc, char * argv[])
 
       }
       mbbw[window] = (selectedJets[0]->p4() + selectedJets[1]->p4()).M();
+
       if ( !signalregion_ || isMC_ )
       { 
-         h1["m12_btagsel"] -> Fill(mbbw[window])
+	h1["m12_btagsel"] -> Fill(mbbw[window]);
          // weight = 1;
         // tree -> Fill();
       }
