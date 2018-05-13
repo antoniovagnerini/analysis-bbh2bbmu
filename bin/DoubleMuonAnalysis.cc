@@ -15,7 +15,7 @@
 #include "TCanvas.h"
 #include "TAxis.h"
 
-#include "tdrstyle.C"
+//#include "tdrstyle.C"
 
 #include "Analysis/Tools/interface/Analysis.h"
 #include "Analysis/Tools/bin/macro_config.h"
@@ -135,7 +135,7 @@ int main(int argc, char * argv[])
       const char muID = muonsid_.at(0) ;
       for ( int m = 0 ; m < slimmedMuons->size() ; ++m )
       {	 
-	if ( (muID =='L' && slimmedMuons->at(m).isLooseMuon()) || (muID =='M' && slimmedMuons->at(m).isMediumMuon())  )
+	if ( (muID =='M' && slimmedMuons->at(m).isMediumMuon()) || (muID =='T' && slimmedMuons->at(m).isTightMuon())  )
 	 { 
 	   selectedMuons.push_back(&slimmedMuons->at(m));	    
 	   ++nmuons;
@@ -366,7 +366,7 @@ int main(int argc, char * argv[])
        std::cout << "#bin = " << i+1 << " passing = " << num << " +/- " << errnum << " total = " << den << " +/- " << errden <<std::endl;
        
      }                                                                                                                                                                                                     
-
+   /*
    setTDRStyle();
 
    //Plot trig eff 
@@ -378,6 +378,7 @@ int main(int argc, char * argv[])
    g_eff->GetYaxis()->SetTitle("trigger efficiency");
    g_eff->Draw("AP"); 
    c1->SaveAs(("Trig_eff_"+hltPath_+".pdf").c_str());  
+   */
 
    //Histos
    for (auto & ih1 : h1)   {

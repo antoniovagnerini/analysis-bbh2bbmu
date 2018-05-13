@@ -383,7 +383,7 @@ int main(int argc, char * argv[])
       {	 
 
 	//       if ( i > 0 && i%100==0 ) std::cout << i << "\t" << "slimmed" << "\t" <<slimmedMuons->at(m).pt() << std::endl;
-	if ( (muID =='L' && slimmedMuons->at(m).isLooseMuon()) || (muID =='M' && slimmedMuons->at(m).isMediumMuon())  )
+	if ( (muID =='M' && slimmedMuons->at(m).isMediumMuon()) || (muID =='T' && slimmedMuons->at(m).isTightMuon())  )
 	 { 
 	   selectedMuons.push_back(&slimmedMuons->at(m));	    
 	   ++nmuons;
