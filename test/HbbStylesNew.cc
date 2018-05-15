@@ -33,7 +33,7 @@ public:
   /// define common legend style
   void SetLegendStyle(TLegend* leg);
   /// add CMSPreliminary logo, lumi and channel
-  void CMSPrelim(const char* dataset, double lowX=0.4, double lowY=0.74);
+  void CMSPrelim(bool MC, const char* dataset, double lowX=0.4, double lowY=0.74);
   void plotchannel(TString channel);
 
 private:
@@ -96,7 +96,7 @@ void HbbStylesNew::SetStyle()
   HbbStyle->SetFuncWidth(2);
 
   // Various
-  HbbStyle->SetMarkerStyle(21);
+  HbbStyle->SetMarkerStyle(20);
   HbbStyle->SetMarkerColor(kBlack);
   HbbStyle->SetMarkerSize (1.4);
 
@@ -220,7 +220,7 @@ void HbbStylesNew::SetLegendStyle(TLegend* leg)
   leg->SetTextSize(textSize_);
 }
 
-void CMSPrelim(const char* dataset, double lowX, double lowY)
+void CMSPrelim(bool MC, const char* dataset, double lowX, double lowY)
 {
   TPaveText* cmsprel  = new TPaveText(lowX, lowY+0.06, lowX+0.30, lowY+0.16, "NDC");
   cmsprel->SetBorderSize(   0 );
@@ -229,19 +229,48 @@ void CMSPrelim(const char* dataset, double lowX, double lowY)
   cmsprel->SetTextSize ( 0.05 );
   cmsprel->SetTextColor(    1 );
   cmsprel->SetTextFont (   62 );
-  cmsprel->AddText("CMS Preliminary");
+  if ( !MC ) cmsprel->AddText("CMS           ");
+  else       cmsprel->AddText("CMS Simulation");
   cmsprel->Draw();
 
-  TPaveText* lumi     = new TPaveText(lowX+0.48, lowY+0.155, lowX+0.75, lowY+0.232, "NDC"); 
-  //  TPaveText* lumi     = new TPaveText(lowX+0.08, lowY+0.061, lowX+0.45, lowY+0.161, "NDC");
+  float lowXlumi  = lowX+0.59;
+  float lowYlumi  = lowY+0.158;
+  float highXlumi = lowX+0.72;
+  float highYlumi = lowY+0.161;
+
+  if ( !MC ) 
+    {
+      lowXlumi  = lowX+0.48;
+      lowYlumi  = lowY+0.155;
+      highXlumi = lowX+0.75;
+      highYlumi = lowY+0.232;
+    }
+
+
+  TPaveText* lumi     = new TPaveText(lowXlumi, lowYlumi, highXlumi, highYlumi, "NDC"); 
+  //  TPaveText* lumi     = new TPaveText(lowX+0.48, lowY+0.155, lowX+0.75, lowY+0.232, "NDC"); 
+  // //  TPaveText* lumi     = new TPaveText(lowX+0.08, lowY+0.06, lowX+0.45, lowY+0.16, "NDC");
+
   lumi->SetBorderSize(   0 );
   lumi->SetFillStyle(    0 );
   lumi->SetTextAlign(   12 );
   lumi->SetTextSize ( 0.05 );
   lumi->SetTextColor(    1 );
   lumi->SetTextFont (   62 );
-  lumi->AddText(dataset);
+  if ( !MC ) lumi->AddText(dataset);
+  else lumi->AddText("13 TeV");
   lumi->Draw();
+
+  TPaveText* wip     = new TPaveText(lowX-0.005, lowY+0.05, lowX+0.4, lowY+0.06, "NDC");
+  wip->SetBorderSize(   0 );
+  wip->SetFillStyle(    0 );
+  wip->SetTextAlign(   12 );
+  wip->SetTextSize ( 0.04 );
+  wip->SetTextColor(    1 );
+  wip->SetTextFont (   52 );
+  wip->AddText("Work in Progress");
+  wip->Draw();
+
 
 }
 void plotchannel(TString channel) {
