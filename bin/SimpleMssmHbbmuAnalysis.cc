@@ -27,14 +27,14 @@ int main(int argc, char * argv[])
    
    TH1::SetDefaultSumw2();  // proper treatment of errors when scaling histograms
    TH2::SetDefaultSumw2();
-
+   
    // Cuts
    std::string btagalgo = btagalgo_;
    float btagmin[3] = { btagwp_, btagwp_, btagwp_};
 
    // Input files list
    Analysis analysis(inputlist_);
-   std::vector<std::pair<int,int>> eraRanges = {{299337,302029},{302030,303434},{303435,304826},{304911,306462}}; //C,D,E,F
+   std::vector<std::pair<int,int>> eraRanges = {{299337,302029},{302030,303434},{303435,304826},{304911,316272}}; //C,D,E,F&A 306462 
 
    int nwindows = std::floor(prescaleEra_[3]); // number of distributions  
 
@@ -50,7 +50,7 @@ int main(int argc, char * argv[])
    // std::string l1jetob = "hltL1Mu12er2p3Jet40er2p3dRMax0p4DoubleJet40er2p3dEtaMax1p6";
    // std::string path = "MssmHbb/Events/slimmedPatTrigger/";
    // analysis.addTree<TriggerObject>( l1jetob.c_str(),std::string(path + l1jetob).c_str());
-    
+
    analysis.triggerResults("MssmHbb/Events/TriggerResults");
    
    //   FilterResults evtFilter = analysis.eventFilter("MssmHbb/Metadata/EventFilter"); 
@@ -200,7 +200,6 @@ int main(int argc, char * argv[])
          if (!analysis.selectJson() ) continue; // To use only goodJSonFiles
       }
       
-
       // #0 TRIGGERED EVTs     ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       
       if ( ! (isMC_ && signalregion_) ) // for data fire trigger first
@@ -209,7 +208,7 @@ int main(int argc, char * argv[])
       if ( !triggerFired ) continue;
       ++ntrig;
      }
-      
+
       //Prescale
       if ( ! isMC_ && ! signalregion_ )
 	{
@@ -312,14 +311,16 @@ int main(int argc, char * argv[])
          h1[Form("eta_%i",j)]  -> Fill(jet->eta());
          h1[Form("phi_%i",j)]  -> Fill(jet->phi());
          h1[Form("csv_%i",j)] -> Fill(jet->btag());
-	 h1[Form("deepcsv_%i",j)] -> Fill(jet->btag("btag_deepb")+jet->btag("btag_deepbb"));
+	 //	 h1[Form("deepcsv_%i",j)] -> Fill(jet->btag("btag_deepb")+jet->btag("btag_deepbb"));
+	 h1[Form("deepcsv_%i",j)] -> Fill(jet->btag("btag_deepbvsall"));
 	 h2[Form("eta_phi_%i",j)] -> Fill(jet->eta(),jet->phi());
          
 	 //btag selection
       	 float btagj; 
       	 if      ( btagalgo == "csv" )      btagj = jet->btag();
-         else if ( btagalgo == "deepcsv" )  btagj = jet->btag("btag_deepb")+jet->btag("btag_deepbb");
-      	 else return -1;
+	 //         else if ( btagalgo == "deepcsv" )  btagj = jet->btag("btag_deepb")+jet->btag("btag_deepbb");
+         else if ( btagalgo == "deepcsv" )  btagj = jet->btag("btag_deepbvsall");                                                                                             
+   	 else return -1;
          // if ( j == 2 && i%50000  ) std::cout << "event # " << i << " btagj(3) = " << btagj <<  std::endl;   
 	 // if ( j == 2 && btagj < btagmin[j] && i%50000  ) std::cout << "SKIP in bbb" <<  std::endl;  
 
