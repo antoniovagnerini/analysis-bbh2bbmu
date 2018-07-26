@@ -342,6 +342,28 @@ int main(int argc, char * argv[])
 
       if ( ! goodEvent ) continue;
      
+      //FSR correction
+
+      for ( size_t s = 3; s < selectedJets.size() ; ++s )  //soft jet loop - from 4th jet
+            {
+	      Jet & softjet = *selectedJets[s];
+	      float dRminsoft_bj = std::min({softjet.deltaR(*selectedJets[0]),softjet.deltaR(*selectedJets[1])});
+	      if ( dRminsoft_bj > 0.8 ) continue;
+	      
+	      for ( int j = 0; j < 2; ++j ) //dijet loop
+		{
+		  Jet & bjet = *selectedJets[j];
+		  
+		  if ( dRminsoft_bj != softjet.deltaR(*selectedJets[j]) ) continue;
+		  bjet.p4( bjet.p4() + softjet.p4() );
+		  
+		  //Replace bjet with corrected jet
+		  selectedJets.erase(selectedJets.begin()+j);
+		  selectedJets.insert(selectedJets.begin()+j, &bjet );
+		}
+	    }
+
+
       //+++++++++++++++++++++++++++++++++++++++++++
       // Fill histograms of B-JET SELECTION but no MATCHING
             
