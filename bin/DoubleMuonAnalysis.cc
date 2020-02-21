@@ -1,3 +1,4 @@
+
 #include "boost/program_options.hpp"
 #include "boost/algorithm/string.hpp"
 #include <string>
@@ -38,14 +39,14 @@ int main(int argc, char * argv[])
    Analysis analysis(inputlist_);
    
    analysis.addTree<Muon>("Muons","MssmHbb/Events/slimmedMuons");
-        
+
    for ( auto & obj : triggerObjectsMuons_ )
        analysis.addTree<TriggerObject> (obj,Form("MssmHbb/Events/slimmedPatTrigger/%s",obj.c_str()));
 
    analysis.triggerResults("MssmHbb/Events/TriggerResults");
-   
+
    if( !isMC_ ) analysis.processJsonFile(json_);
-    
+
    TFile hout(outputRoot_.c_str(),"recreate");
  
    std::map<std::string, TH1F*> h1;
@@ -65,18 +66,26 @@ int main(int argc, char * argv[])
    h1["pt_muprobe"]   = new TH1F("pt_muprobe  " , "" , 100, 0, 300); //probe
    h1["eta_muprobe"]  = new TH1F("eta_muprobe " , "" , 60, -3, 3);
 
-   h1["pt_muprobefl"]   = new TH1F("pt_muprobe  " , "" , 100, 0, 300); 
-   h1["eta_muprobefl"]  = new TH1F("eta_muprobe " , "" , 60, -3, 3);
+   h1["pt_muprobefl"]   = new TH1F("pt_muprobefl  " , "" , 100, 0, 300); 
+   h1["eta_muprobefl"]  = new TH1F("eta_muprobefl " , "" , 60, -3, 3);
 
    //M12 TagnProbe
    h1["m12_mutag"]           = new TH1F("m12_mutag"       , "" , 400, 0, 15); //m12  
    h1["m12_mutagnprobe"]     = new TH1F("m12_mutagnprobe" , "" , 400, 0, 15);
    h1["m12_mutagnprobefl"]     = new TH1F("m12_mutagnprobefl" , "" , 400, 0, 15);
 
-   std::vector<std::pair<float,float> > pt_bins;
+   std::vector<std::pair<float,float> > pt_bins = {{11.5,12.5},{12.5,13.5},{13.5,20.5},{20.5,30.},{30.,50.}};
 
-   if ( hltPath_ == "HLT_Mu8_v" ) pt_bins = {{5,6},{6,7},{7,7.75},{7.75,8.25},{8.25,9},{9,11},{11,30}};
-   else if (hltPath_=="HLT_SingleJet30_Mu12_SinglePFJet40_v") pt_bins = {{8,11},{11,13},{13,15},{15,50}};                       
+
+   //   if ( hltPath_ == "HLT_Mu8_v" ) pt_bins = {{5,6},{6,7},{7,7.75},{7.75,8.25},{8.25,9},{9,11},{11,30}};
+   // else if (hltPath_=="HLT_SingleJet30_Mu12_SinglePFJet40_v") pt_bins = {{8,11},{11,13},{13,15},{15,50}};                       
+
+   //   if      ( hltPath_ == "HLT_Mu8_v" && muonsid_ =="TIGHT" )  pt_bins = {{11.5,12.5},{12.5,13.5},{13.5,18.5},{18.5,30.}};
+   //   if ( hltPath_ == "HLT_Mu8_v" ) pt_bins = {{11.5,12.5},{12.5,13.5},{13.5,20.5},{20.5,30.},{30.,50.} };                     
+   //    else if (hltPath_=="HLT_SingleJet30_Mu12_SinglePFJet40_v") {{11.5,12.5},{12.5,13.5},{13.5,20.5},{20.5,30.},{30.,50.} };                     
+    
+
+
 
    for ( auto & pt_bin : pt_bins ) 
      {
@@ -87,7 +96,7 @@ int main(int argc, char * argv[])
  
    double m12_mutag;
    double m12_mutagnprobe;
-   
+
    //edge array
    float edges[ pt_bins.size() +1 ]; //Nedges = Nbins+1 
    for ( size_t i = 0; i< pt_bins.size(); i++ )
@@ -172,11 +181,23 @@ int main(int argc, char * argv[])
       std::vector<TriggerObject *> triggerObjectL3 ;
 
       for ( int i = 0 ; i < objL1->size() ; ++i )
-        triggerObjectL1.push_back(&objL1->at(i)) ;
- 
+	{
+	  TriggerObject * tobL1 = & objL1->at(i);
+	  if (tobL1->pt()  < 12.0 ) continue;
+	  if (tobL1->eta() > 2.3 ) continue;
+          triggerObjectL1.push_back(tobL1) ;                                                                                                                                               
+	  //	  triggerObjectL1.push_back(&objL1->at(i)) ;
+	}
+
       for ( int j = 0 ; j < objL3->size() ; ++j )
-	  triggerObjectL3.push_back(&objL3->at(j)) ;
-	
+	{
+	  TriggerObject * tobL3 = & objL3->at(j);
+          if (tobL3->pt()  < 12.0 ) continue;
+          if (tobL3->eta() > 2.3  ) continue;
+	  triggerObjectL3.push_back(tobL3) ;
+	}
+
+
       std::vector<int> matchedL1_i ;                                    
       std::vector<int> matchedL3_i ;  
    
@@ -192,11 +213,11 @@ int main(int argc, char * argv[])
 	 for ( size_t i = 0; i < triggerObjectL1.size() ; ++i )
 	   {
 	     const TriggerObject & tobL1 = *triggerObjectL1[i] ;
-
-	     for ( size_t j = 0; j < triggerObjectL3.size() ; ++j )
+	     	    
+	       for ( size_t j = 0; j < triggerObjectL3.size() ; ++j )
 	       {
 		 const TriggerObject & tobL3 = *triggerObjectL3[j] ;
-
+		
 		 if (muon->deltaR( tobL1 ) < drmax_ && muon->deltaR( tobL3 ) < 0.005 )
 		   {
 		     if ( std::find(matchedL1_i.begin(), matchedL1_i.end(), i) != matchedL1_i.end() ) continue; //if either L1 or L3 tobs already matched skip
@@ -271,16 +292,11 @@ int main(int argc, char * argv[])
        
        double pt_probe = goodMuons[probe_i]->pt();
 
-       if ( hltPath_ == "HLT_Mu8_v" )
+       //       if ( hltPath_ == "HLT_Mu8_v" )
+       //	 {
+       for ( auto & pt_bin : pt_bins )
 	 {
-	   for ( auto & pt_bin : pt_bins )
-	     if ( pt_probe > pt_bin.first && pt_probe < pt_bin.second ) h1[Form("m12_mutag_%.2fto%.2f", pt_bin.first, pt_bin.second)]-> Fill(m12_mutag); 
-	 }
-
-       else if ( hltPath_ == "HLT_SingleJet30_Mu12_SinglePFJet40_v" )
-	 {
-	   for ( auto & pt_bin : pt_bins )
-	     if ( pt_probe > pt_bin.first && pt_probe < pt_bin.second ) h1[Form("m12_mutag_%.2fto%.2f", pt_bin.first, pt_bin.second)]-> Fill(m12_mutag);
+	   if ( pt_probe > pt_bin.first && pt_probe < pt_bin.second ) h1[Form("m12_mutag_%.2fto%.2f", pt_bin.first, pt_bin.second)]-> Fill(m12_mutag); 
 	 }
 
        //std::cout << "pT probe = "  << pt_probe << std::endl;
@@ -298,16 +314,9 @@ int main(int argc, char * argv[])
 	 
 	 double pt_psprobe = goodMuons[psprobe_i]->pt();
        
-	 if ( hltPath_ == "HLT_Mu8_v" )
+	 for ( auto & pt_bin : pt_bins )
 	   {
-	     for ( auto & pt_bin : pt_bins )
-	       if ( pt_psprobe > pt_bin.first && pt_psprobe < pt_bin.second ) h1[Form("m12_mutagnprobe_%.2fto%.2f", pt_bin.first, pt_bin.second)]-> Fill(m12_mutagnprobe);
-	   }
-	 
-	 else if ( hltPath_ == "HLT_SingleJet30_Mu12_SinglePFJet40_v" )
-	   {
-	     for ( auto & pt_bin : pt_bins )
-	       if ( pt_psprobe > pt_bin.first && pt_psprobe < pt_bin.second )  h1[Form("m12_mutagnprobe_%.2fto%.2f", pt_bin.first, pt_bin.second)]-> Fill(m12_mutagnprobe);
+	     if ( pt_psprobe > pt_bin.first && pt_psprobe < pt_bin.second ) h1[Form("m12_mutagnprobe_%.2fto%.2f", pt_bin.first, pt_bin.second)]-> Fill(m12_mutagnprobe);
 	   }
        }
 
@@ -322,19 +331,10 @@ int main(int argc, char * argv[])
 	   h1["eta_muprobefl"]      -> Fill( goodMuons[flprobe_i]->eta() );
 
 	   double pt_flprobe = goodMuons[flprobe_i]->pt();
-
-	   if ( hltPath_ == "HLT_Mu8_v" )
-	     {
-	       for ( auto & pt_bin : pt_bins )
-		 if ( pt_flprobe > pt_bin.first && pt_flprobe < pt_bin.second ) h1[Form("m12_mutagnprobefl_%.2fto%.2f", pt_bin.first, pt_bin.second)]-> Fill(m12_mutagnprobe);
-	     }
-
-	   else if ( hltPath_ == "HLT_SingleJet30_Mu12_SinglePFJet40_v" )
-	     {
-	       for ( auto & pt_bin : pt_bins )
-		 if ( pt_flprobe > pt_bin.first && pt_flprobe < pt_bin.second )  h1[Form("m12_mutagnprobefl_%.2fto%.2f", pt_bin.first, pt_bin.second)]-> Fill(m12_mutagnprobe);
-	     }
-
+	  
+	   for ( auto & pt_bin : pt_bins ) {
+	     if ( pt_flprobe > pt_bin.first && pt_flprobe < pt_bin.second ) h1[Form("m12_mutagnprobefl_%.2fto%.2f", pt_bin.first, pt_bin.second)]-> Fill(m12_mutagnprobe);
+	     }	  
 	 }
 
        //std::cout << "pT passingprobe = "  << pt_flprobe << std::endl;
@@ -366,8 +366,8 @@ int main(int argc, char * argv[])
        std::cout << "#bin = " << i+1 << " passing = " << num << " +/- " << errnum << " total = " << den << " +/- " << errden <<std::endl;
        
      }                                                                                                                                                                                                     
-   /*
-   setTDRStyle();
+
+   //   setTDRStyle();
 
    //Plot trig eff 
    TCanvas *c1 = new TCanvas("c1","c1");                                                                                                                                                                   
@@ -378,7 +378,6 @@ int main(int argc, char * argv[])
    g_eff->GetYaxis()->SetTitle("trigger efficiency");
    g_eff->Draw("AP"); 
    c1->SaveAs(("Trig_eff_"+hltPath_+".pdf").c_str());  
-   */
 
    //Histos
    for (auto & ih1 : h1)   {
